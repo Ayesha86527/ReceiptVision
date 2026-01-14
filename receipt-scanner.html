@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ReceiptVision - Smart Expense Tracker</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #FF6B35;
+            --primary-dark: #E85A2B;
+            --secondary: #004E89;
+            --accent: #FFD23F;
+            --bg-dark: #0A0E27;
+            --bg-card: #151B3D;
+            --bg-light: #1E2749;
+            --text-primary: #F7F9FB;
+            --text-secondary: #B8C5D6;
+            --success: #06D6A0;
+            --warning: #FFD23F;
+            --danger: #EF476F;
+            --shadow-sm: 0 2px 8px rgba(0, 0, 0, 0.3);
+            --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.4);
+            --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Outfit', sans-serif;
+            background: var(--bg-dark);
+            color: var(--text-primary);
+            overflow-x: hidden;
+            min-height: 100vh;
+            position: relative;
+        }
+
+        body::before {
+            content: '';
+            position: fixed;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at 50% 50%, rgba(102, 126, 234, 0.1) 0%, transparent 50%);
+            animation: rotate 30s linear infinite;
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+            position: relative;
+            z-index: 1;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 3rem;
+            animation: fadeInDown 0.8s ease-out;
+        }
+
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-family: 'DM Serif Display', serif;
+            font-size: 4rem;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 0.5rem;
+            letter-spacing: -0.02em;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.2rem;
+            font-weight: 300;
+        }
+
+        .card {
+            background: var(--bg-card);
+            border-radius: 24px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            box-shadow: var(--shadow-md);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .upload-zone {
+            border: 3px dashed rgba(255, 107, 53, 0.3);
+            border-radius: 20px;
+            padding: 3rem;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.05) 0%, rgba(255, 210, 63, 0.05) 100%);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-zone:hover {
+            border-color: var(--primary);
+            background: linear-gradient(135deg, rgba(255, 107, 53, 0.1) 0%, rgba(255, 210, 63, 0.1) 100%);
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4rem;
+            margin-bottom: 1rem;
+            display: inline-block;
+            animation: float 3s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-10px); }
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        button {
+            background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+            color: white;
+            border: none;
+            padding: 1rem 2.5rem;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+            font-family: 'Outfit', sans-serif;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(255, 107, 53, 0.5);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .api-key-input {
+            width: 100%;
+            padding: 1rem;
+            border-radius: 12px;
+            border: 2px solid rgba(255, 255, 255, 0.1);
+            background: var(--bg-light);
+            color: var(--text-primary);
+            font-size: 1rem;
+            font-family: 'Outfit', sans-serif;
+            transition: all 0.3s ease;
+        }
+
+        .api-key-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(255, 107, 53, 0.2);
+        }
+
+        .preview-image {
+            max-width: 100%;
+            border-radius: 16px;
+            margin: 1rem 0;
+            box-shadow: var(--shadow-md);
+        }
+
+        .receipt-data {
+            background: var(--bg-light);
+            border-radius: 16px;
+            padding: 1.5rem;
+            margin-top: 1rem;
+        }
+
+        .receipt-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.75rem 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .receipt-item:last-child {
+            border-bottom: none;
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .stat-card {
+            background: linear-gradient(135deg, var(--bg-light) 0%, var(--bg-card) 100%);
+            border-radius: 20px;
+            padding: 2rem;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-lg);
+        }
+
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--primary);
+            margin: 0.5rem 0;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary);
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 1rem 1.5rem;
+            border-radius: 12px;
+            margin: 1rem 0;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .alert-success {
+            background: rgba(6, 214, 160, 0.1);
+            border-left: 4px solid var(--success);
+            color: var(--success);
+        }
+
+        .alert-danger {
+            background: rgba(239, 71, 111, 0.1);
+            border-left: 4px solid var(--danger);
+            color: var(--danger);
+        }
+
+        .category-tag {
+            display: inline-block;
+            padding: 0.4rem 1rem;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin: 0.25rem;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.2) 0%, rgba(118, 75, 162, 0.2) 100%);
+            border: 1px solid rgba(102, 126, 234, 0.3);
+        }
+
+        .receipt-list {
+            display: grid;
+            gap: 1rem;
+        }
+
+        .receipt-list-item {
+            background: var(--bg-light);
+            border-radius: 12px;
+            padding: 1.5rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: all 0.3s ease;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .receipt-list-item:hover {
+            background: var(--bg-card);
+            transform: translateX(5px);
+        }
+
+        .section-title {
+            font-family: 'DM Serif Display', serif;
+            font-size: 2rem;
+            margin-bottom: 1.5rem;
+            color: var(--text-primary);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+            border-bottom: 2px solid rgba(255, 255, 255, 0.05);
+        }
+
+        .tab {
+            padding: 1rem 2rem;
+            background: none;
+            border: none;
+            color: var(--text-secondary);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 0;
+            box-shadow: none;
+            position: relative;
+        }
+
+        .tab:hover {
+            color: var(--text-primary);
+            transform: none;
+        }
+
+        .tab.active {
+            color: var(--primary);
+        }
+
+        .tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: -2px;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2.5rem;
+            }
+
+            .stats-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>ReceiptVision</h1>
+            <p class="subtitle">Transform receipts into insights with AI</p>
+        </header>
+
+        <div class="card">
+            <h3 class="section-title">🔑 API Key</h3>
+            <input type="password" 
+                   id="apiKey" 
+                   class="api-key-input" 
+                   placeholder="Enter your Gemini API key">
+            <p style="color: var(--text-secondary); margin-top: 0.5rem; font-size: 0.9rem;">Get your free API key at <a href="https://makersuite.google.com/app/apikey" target="_blank" style="color: var(--primary);">makersuite.google.com</a></p>
+        </div>
+
+        <div class="tabs">
+            <button class="tab active" data-tab="scan">📸 Scan Receipt</button>
+            <button class="tab" data-tab="insights">📊 Insights</button>
+            <button class="tab" data-tab="history">📜 History</button>
+        </div>
+
+        <div class="tab-content active" id="scan-tab">
+            <div class="card">
+                <div class="upload-zone" id="uploadZone">
+                    <div class="upload-icon">📸</div>
+                    <h3>Drop your receipt here</h3>
+                    <p style="color: var(--text-secondary); margin: 1rem 0;">or click to browse</p>
+                    <input type="file" id="receiptInput" accept="image/*">
+                    <button type="button" id="uploadBtn">Choose File</button>
+                </div>
+            </div>
+
+            <div id="scanResults"></div>
+        </div>
+
+        <div class="tab-content" id="insights-tab">
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="stat-label">This Month</div>
+                    <div class="stat-value" id="monthlyTotal">$0.00</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Receipts Scanned</div>
+                    <div class="stat-value" id="receiptCount">0</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Top Category</div>
+                    <div class="stat-value" id="topCategory" style="font-size: 1.5rem;">-</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-label">Avg. Transaction</div>
+                    <div class="stat-value" id="avgTransaction">$0.00</div>
+                </div>
+            </div>
+
+            <div class="card">
+                <h3 class="section-title">📊 Spending by Category</h3>
+                <div id="categoryChart" style="background: var(--bg-light); border-radius: 16px; padding: 1.5rem; min-height: 200px;"></div>
+            </div>
+        </div>
+
+        <div class="tab-content" id="history-tab">
+            <div class="card">
+                <h3 class="section-title">📜 Receipt History</h3>
+                <div id="receiptHistory" class="receipt-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
+        let receiptsData = [];
+
+        // Load receipts from persistent storage
+        async function loadReceipts() {
+            try {
+                const result = await window.storage.get('receipts-data');
+                if (result && result.value) {
+                    receiptsData = JSON.parse(result.value);
+                    console.log('Loaded receipts:', receiptsData.length);
+                }
+            } catch (e) {
+                console.log('No existing data:', e);
+                receiptsData = [];
+            }
+        }
+
+        // Save receipts to persistent storage
+        async function saveReceipts() {
+            try {
+                await window.storage.set('receipts-data', JSON.stringify(receiptsData));
+                console.log('Saved successfully');
+            } catch (e) {
+                console.error('Save error:', e);
+            }
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            console.log('🚀 App starting...');
+            await loadReceipts();
+            console.log('✅ Receipts loaded:', receiptsData.length);
+            updateDashboard();
+            renderHistory();
+            console.log('✅ Dashboard ready');
+
+            // Tab switching
+            document.querySelectorAll('.tab').forEach(tab => {
+                tab.addEventListener('click', () => {
+                    switchTab(tab.dataset.tab);
+                });
+            });
+
+            // Upload handlers
+            const uploadZone = document.getElementById('uploadZone');
+            const receiptInput = document.getElementById('receiptInput');
+            const uploadBtn = document.getElementById('uploadBtn');
+
+            uploadBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                receiptInput.click();
+            });
+
+            uploadZone.addEventListener('click', (e) => {
+                if (e.target !== uploadBtn && !uploadBtn.contains(e.target)) {
+                    receiptInput.click();
+                }
+            });
+
+            receiptInput.addEventListener('change', (e) => {
+                if (e.target.files.length) {
+                    handleFile(e.target.files[0]);
+                }
+            });
+        });
+
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+
+            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+            document.getElementById(`${tabName}-tab`).classList.add('active');
+
+            if (tabName === 'insights') updateDashboard();
+            if (tabName === 'history') renderHistory();
+        }
+
+        async function handleFile(file) {
+            console.log('📁 File selected:', file.name, file.type);
+            
+            const apiKey = document.getElementById('apiKey').value;
+            console.log('🔑 API key present:', apiKey ? 'YES' : 'NO');
+            
+            if (!apiKey) {
+                showAlert('⚠️ Please enter your Gemini API key first!', 'danger');
+                return;
+            }
+
+            if (!file.type.startsWith('image/')) {
+                showAlert('⚠️ Please select an image file', 'danger');
+                return;
+            }
+
+            const resultsDiv = document.getElementById('scanResults');
+            const imageUrl = URL.createObjectURL(file);
+
+            resultsDiv.innerHTML = `
+                <div class="card">
+                    <img src="${imageUrl}" class="preview-image" alt="Receipt">
+                    <div style="text-align: center; padding: 2rem;">
+                        <div class="loading"></div>
+                        <p style="margin-top: 1rem; color: var(--text-secondary);">Analyzing receipt...</p>
+                    </div>
+                </div>
+            `;
+
+            try {
+                console.log('🔄 Converting to base64...');
+                const base64Image = await fileToBase64(file);
+                console.log('✅ Base64 done, length:', base64Image.length);
+                
+                console.log('🤖 Calling Gemini API...');
+                const receiptData = await scanReceipt(base64Image, apiKey);
+                console.log('✅ Receipt data:', receiptData);
+
+                displayReceiptData(receiptData, imageUrl);
+
+                receiptsData.push(receiptData);
+                console.log('💾 Saving...');
+                await saveReceipts();
+                console.log('✅ Saved!');
+
+                updateDashboard();
+                showAlert('✅ Receipt scanned successfully!', 'success');
+            } catch (error) {
+                console.error('❌ ERROR:', error);
+                showAlert('❌ Failed: ' + error.message, 'danger');
+                resultsDiv.innerHTML = '';
+            }
+        }
+
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+        }
+
+        async function scanReceipt(base64Image, apiKey) {
+            const response = await fetch(`${GEMINI_API_ENDPOINT}/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{
+                        parts: [
+                            { text: `Extract receipt info in JSON format. Return ONLY valid JSON with: merchant, date (YYYY-MM-DD), total (number), items (array of {name, price}), category (one of: Food, Transport, Shopping, Entertainment, Healthcare, Utilities, Other), paymentMethod.` },
+                            {
+                                inline_data: {
+                                    mime_type: "image/jpeg",
+                                    data: base64Image
+                                }
+                            }
+                        ]
+                    }]
+                })
+            });
+
+            if (!response.ok) throw new Error(`API error: ${response.status}`);
+
+            const data = await response.json();
+            const text = data.candidates[0].content.parts[0].text;
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (!jsonMatch) throw new Error('Invalid response format');
+
+            const receiptData = JSON.parse(jsonMatch[0]);
+            receiptData.id = Date.now();
+            receiptData.timestamp = new Date().toISOString();
+            
+            // Use today's date if receipt date is missing or invalid
+            if (!receiptData.date) {
+                const today = new Date();
+                receiptData.date = today.toISOString().split('T')[0];
+            }
+
+            return receiptData;
+        }
+
+        function displayReceiptData(data, imageUrl) {
+            const resultsDiv = document.getElementById('scanResults');
+
+            const itemsHTML = data.items?.length ? 
+                data.items.map(item => `
+                    <div class="receipt-item">
+                        <span>${item.name}</span>
+                        <span style="font-weight: 600;">$${parseFloat(item.price).toFixed(2)}</span>
+                    </div>
+                `).join('') : 
+                '<p style="color: var(--text-secondary);">No items detected</p>';
+
+            resultsDiv.innerHTML = `
+                <div class="card">
+                    <img src="${imageUrl}" class="preview-image" alt="Receipt">
+                    <div class="receipt-data">
+                        <h3 style="margin-bottom: 1rem;">${data.merchant || 'Unknown Merchant'}</h3>
+                        <div class="receipt-item">
+                            <span>Date:</span>
+                            <span>${data.date || 'Unknown'}</span>
+                        </div>
+                        <div class="receipt-item">
+                            <span>Total:</span>
+                            <span style="font-weight: 700; color: var(--primary); font-size: 1.3rem;">$${parseFloat(data.total || 0).toFixed(2)}</span>
+                        </div>
+                        <div class="receipt-item">
+                            <span>Category:</span>
+                            <span><span class="category-tag">${data.category || 'Other'}</span></span>
+                        </div>
+                        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
+                        <h4 style="margin-bottom: 1rem;">Items</h4>
+                        ${itemsHTML}
+                    </div>
+                </div>
+            `;
+        }
+
+        function updateDashboard() {
+            console.log('📊 Updating dashboard, receipts:', receiptsData.length);
+            
+            if (receiptsData.length === 0) {
+                document.getElementById('monthlyTotal').textContent = '$0.00';
+                document.getElementById('receiptCount').textContent = '0';
+                document.getElementById('topCategory').textContent = '-';
+                document.getElementById('avgTransaction').textContent = '$0.00';
+                document.getElementById('categoryChart').innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 3rem;">No data yet. Scan your first receipt!</p>';
+                return;
+            }
+
+            const currentMonth = new Date().getMonth();
+            const currentYear = new Date().getFullYear();
+            
+            console.log('📅 Current month/year:', currentMonth, currentYear);
+
+            const monthlyReceipts = receiptsData.filter(r => {
+                const date = new Date(r.date);
+                const matches = date.getMonth() === currentMonth && date.getFullYear() === currentYear;
+                console.log('Receipt date:', r.date, 'matches:', matches);
+                return matches;
+            });
+            
+            console.log('📋 Monthly receipts:', monthlyReceipts.length);
+
+            const monthlyTotal = monthlyReceipts.reduce((sum, r) => sum + parseFloat(r.total || 0), 0);
+            const avgTransaction = monthlyReceipts.length > 0 ? monthlyTotal / monthlyReceipts.length : 0;
+
+            const categoryTotals = {};
+            monthlyReceipts.forEach(r => {
+                const cat = r.category || 'Other';
+                categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(r.total || 0);
+            });
+            
+            console.log('💰 Category totals:', categoryTotals);
+
+            const topCategory = Object.keys(categoryTotals).length > 0 ?
+                Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0][0] : '-';
+
+            document.getElementById('monthlyTotal').textContent = `${monthlyTotal.toFixed(2)}`;
+            document.getElementById('receiptCount').textContent = receiptsData.length;
+            document.getElementById('topCategory').textContent = topCategory;
+            document.getElementById('avgTransaction').textContent = `${avgTransaction.toFixed(2)}`;
+
+            renderCategoryChart(categoryTotals);
+            console.log('✅ Dashboard updated');
+        }
+
+        function renderCategoryChart(categoryTotals) {
+            const container = document.getElementById('categoryChart');
+
+            if (Object.keys(categoryTotals).length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 3rem;">No data available</p>';
+                return;
+            }
+
+            const total = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
+            const colors = {
+                'Food': '#FF6B35',
+                'Transport': '#004E89',
+                'Shopping': '#FFD23F',
+                'Entertainment': '#06D6A0',
+                'Healthcare': '#EF476F',
+                'Utilities': '#667eea',
+                'Other': '#764ba2'
+            };
+
+            const html = Object.entries(categoryTotals)
+                .sort((a, b) => b[1] - a[1])
+                .map(([category, amount]) => {
+                    const percentage = (amount / total * 100).toFixed(1);
+                    return `
+                        <div style="margin-bottom: 1.5rem;">
+                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
+                                <span style="font-weight: 600;">${category}</span>
+                                <span>$${amount.toFixed(2)} (${percentage}%)</span>
+                            </div>
+                            <div style="background: rgba(255,255,255,0.05); height: 12px; border-radius: 6px; overflow: hidden;">
+                                <div style="background: ${colors[category] || colors['Other']}; height: 100%; width: ${percentage}%; border-radius: 6px; transition: width 0.5s ease;"></div>
+                            </div>
+                        </div>
+                    `;
+                }).join('');
+
+            container.innerHTML = html;
+        }
+
+        function renderHistory() {
+            const container = document.getElementById('receiptHistory');
+
+            if (receiptsData.length === 0) {
+                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 3rem;">No receipts yet. Start scanning!</p>';
+                return;
+            }
+
+            const sorted = [...receiptsData].sort((a, b) => new Date(b.date) - new Date(a.date));
+
+            container.innerHTML = sorted.map(receipt => `
+                <div class="receipt-list-item">
+                    <div>
+                        <div style="font-weight: 600; margin-bottom: 0.5rem;">${receipt.merchant || 'Unknown'}</div>
+                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
+                            ${new Date(receipt.date).toLocaleDateString()} • 
+                            <span class="category-tag" style="margin: 0;">${receipt.category || 'Other'}</span>
+                        </div>
+                    </div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
+                        $${parseFloat(receipt.total || 0).toFixed(2)}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function showAlert(message, type) {
+            const alert = document.createElement('div');
+            alert.className = `alert alert-${type}`;
+            alert.innerHTML = `
+                <span style="font-size: 1.5rem;">${type === 'success' ? '✅' : '❌'}</span>
+                <span>${message}</span>
+            `;
+
+            document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
+            setTimeout(() => alert.remove(), 5000);
+        }
+    </script>
+</body>
+</html>

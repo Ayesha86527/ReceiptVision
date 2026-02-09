@@ -462,347 +462,135 @@
     </div>
 
     <script type="module">
-        const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
-        let receiptsData = [];
+const GEMINI_API_ENDPOINT = 'https://generativelanguage.googleapis.com/v1beta/models';
+let receiptsData = [];
 
-        // Load receipts from persistent storage
-        async function loadReceipts() {
-            try {
-                const result = await window.storage.get('receipts-data');
-                if (result && result.value) {
-                    receiptsData = JSON.parse(result.value);
-                    console.log('Loaded receipts:', receiptsData.length);
-                }
-            } catch (e) {
-                console.log('No existing data:', e);
-                receiptsData = [];
-            }
+// Load receipts from persistent storage
+async function loadReceipts() {
+    try {
+        const result = await window.storage.get('receipts-data');
+        if (result && result.value) {
+            receiptsData = JSON.parse(result.value);
+            console.log('Loaded receipts:', receiptsData.length);
         }
+    } catch (e) {
+        console.log('No existing data:', e);
+        receiptsData = [];
+    }
+}
 
-        // Save receipts to persistent storage
-        async function saveReceipts() {
-            try {
-                await window.storage.set('receipts-data', JSON.stringify(receiptsData));
-                console.log('Saved successfully');
-            } catch (e) {
-                console.error('Save error:', e);
-            }
-        }
+// Save receipts to persistent storage
+async function saveReceipts() {
+    try {
+        await window.storage.set('receipts-data', JSON.stringify(receiptsData));
+        console.log('Saved successfully');
+    } catch (e) {
+        console.error('Save error:', e);
+    }
+}
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', async () => {
-            console.log('🚀 App starting...');
-            await loadReceipts();
-            console.log('✅ Receipts loaded:', receiptsData.length);
-            updateDashboard();
-            renderHistory();
-            console.log('✅ Dashboard ready');
+// Initialize
+document.addEventListener('DOMContentLoaded', async () => {
+    console.log('🚀 App starting...');
+    await loadReceipts();
+    updateDashboard();
+    renderHistory();
 
-            // Tab switching
-            document.querySelectorAll('.tab').forEach(tab => {
-                tab.addEventListener('click', () => {
-                    switchTab(tab.dataset.tab);
-                });
-            });
-
-            // Upload handlers
-            const uploadZone = document.getElementById('uploadZone');
-            const receiptInput = document.getElementById('receiptInput');
-            const uploadBtn = document.getElementById('uploadBtn');
-
-            uploadBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                receiptInput.click();
-            });
-
-            uploadZone.addEventListener('click', (e) => {
-                if (e.target !== uploadBtn && !uploadBtn.contains(e.target)) {
-                    receiptInput.click();
-                }
-            });
-
-            receiptInput.addEventListener('change', (e) => {
-                if (e.target.files.length) {
-                    handleFile(e.target.files[0]);
-                }
-            });
+    document.querySelectorAll('.tab').forEach(tab => {
+        tab.addEventListener('click', () => {
+            switchTab(tab.dataset.tab);
         });
+    });
 
-        function switchTab(tabName) {
-            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
-            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    const uploadZone = document.getElementById('uploadZone');
+    const receiptInput = document.getElementById('receiptInput');
+    const uploadBtn = document.getElementById('uploadBtn');
 
-            document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
-            document.getElementById(`${tabName}-tab`).classList.add('active');
+    uploadBtn.addEventListener('click', e => {
+        e.stopPropagation();
+        receiptInput.click();
+    });
 
-            if (tabName === 'insights') updateDashboard();
-            if (tabName === 'history') renderHistory();
+    uploadZone.addEventListener('click', e => {
+        if (e.target !== uploadBtn && !uploadBtn.contains(e.target)) {
+            receiptInput.click();
         }
+    });
 
-        async function handleFile(file) {
-            console.log('📁 File selected:', file.name, file.type);
-            
-            const apiKey = document.getElementById('apiKey').value;
-            console.log('🔑 API key present:', apiKey ? 'YES' : 'NO');
-            
-            if (!apiKey) {
-                showAlert('⚠️ Please enter your Gemini API key first!', 'danger');
-                return;
-            }
-
-            if (!file.type.startsWith('image/')) {
-                showAlert('⚠️ Please select an image file', 'danger');
-                return;
-            }
-
-            const resultsDiv = document.getElementById('scanResults');
-            const imageUrl = URL.createObjectURL(file);
-
-            resultsDiv.innerHTML = `
-                <div class="card">
-                    <img src="${imageUrl}" class="preview-image" alt="Receipt">
-                    <div style="text-align: center; padding: 2rem;">
-                        <div class="loading"></div>
-                        <p style="margin-top: 1rem; color: var(--text-secondary);">Analyzing receipt...</p>
-                    </div>
-                </div>
-            `;
-
-            try {
-                console.log('🔄 Converting to base64...');
-                const base64Image = await fileToBase64(file);
-                console.log('✅ Base64 done, length:', base64Image.length);
-                
-                console.log('🤖 Calling Gemini API...');
-                const receiptData = await scanReceipt(base64Image, apiKey);
-                console.log('✅ Receipt data:', receiptData);
-
-                displayReceiptData(receiptData, imageUrl);
-
-                receiptsData.push(receiptData);
-                console.log('💾 Saving...');
-                await saveReceipts();
-                console.log('✅ Saved!');
-
-                updateDashboard();
-                showAlert('✅ Receipt scanned successfully!', 'success');
-            } catch (error) {
-                console.error('❌ ERROR:', error);
-                showAlert('❌ Failed: ' + error.message, 'danger');
-                resultsDiv.innerHTML = '';
-            }
+    receiptInput.addEventListener('change', e => {
+        if (e.target.files.length) {
+            handleFile(e.target.files[0]);
         }
+    });
+});
 
-        function fileToBase64(file) {
-            return new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
-        }
+function switchTab(tabName) {
+    document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
 
-        async function scanReceipt(base64Image, apiKey) {
-            const response = await fetch(`${GEMINI_API_ENDPOINT}/gemini-3-flash-preview:generateContent?key=${apiKey}`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    contents: [{
-                        parts: [
-                            { text: `Extract receipt info in JSON format. Return ONLY valid JSON with: merchant, date (YYYY-MM-DD), total (number), items (array of {name, price}), category (one of: Food, Transport, Shopping, Entertainment, Healthcare, Utilities, Other), paymentMethod.` },
-                            {
-                                inline_data: {
-                                    mime_type: "image/jpeg",
-                                    data: base64Image
-                                }
-                            }
-                        ]
-                    }]
-                })
-            });
+    document.querySelector(`[data-tab="${tabName}"]`).classList.add('active');
+    document.getElementById(`${tabName}-tab`).classList.add('active');
 
-            if (!response.ok) throw new Error(`API error: ${response.status}`);
+    if (tabName === 'insights') updateDashboard();
+    if (tabName === 'history') renderHistory();
+}
 
-            const data = await response.json();
-            const text = data.candidates[0].content.parts[0].text;
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (!jsonMatch) throw new Error('Invalid response format');
+async function handleFile(file) {
+    const apiKey = document.getElementById('apiKey').value;
 
-            const receiptData = JSON.parse(jsonMatch[0]);
-            receiptData.id = Date.now();
-            receiptData.timestamp = new Date().toISOString();
-            
-            // Use today's date if receipt date is missing or invalid
-            if (!receiptData.date) {
-                const today = new Date();
-                receiptData.date = today.toISOString().split('T')[0];
-            }
+    if (!apiKey) {
+        showAlert('⚠️ Please enter your Gemini API key first!', 'danger');
+        return;
+    }
 
-            return receiptData;
-        }
+    if (!file.type.startsWith('image/')) {
+        showAlert('⚠️ Please select an image file', 'danger');
+        return;
+    }
 
-        function displayReceiptData(data, imageUrl) {
-            const resultsDiv = document.getElementById('scanResults');
+    const resultsDiv = document.getElementById('scanResults');
+    const imageUrl = URL.createObjectURL(file);
 
-            const itemsHTML = data.items?.length ? 
-                data.items.map(item => `
-                    <div class="receipt-item">
-                        <span>${item.name}</span>
-                        <span style="font-weight: 600;">$${parseFloat(item.price).toFixed(2)}</span>
-                    </div>
-                `).join('') : 
-                '<p style="color: var(--text-secondary);">No items detected</p>';
+    resultsDiv.innerHTML = `
+        <div class="card">
+            <img src="${imageUrl}" class="preview-image">
+            <div style="text-align:center;padding:2rem;">
+                <div class="loading"></div>
+                <p style="margin-top:1rem;color:var(--text-secondary);">
+                    Analyzing receipt...
+                </p>
+            </div>
+        </div>
+    `;
 
-            resultsDiv.innerHTML = `
-                <div class="card">
-                    <img src="${imageUrl}" class="preview-image" alt="Receipt">
-                    <div class="receipt-data">
-                        <h3 style="margin-bottom: 1rem;">${data.merchant || 'Unknown Merchant'}</h3>
-                        <div class="receipt-item">
-                            <span>Date:</span>
-                            <span>${data.date || 'Unknown'}</span>
-                        </div>
-                        <div class="receipt-item">
-                            <span>Total:</span>
-                            <span style="font-weight: 700; color: var(--primary); font-size: 1.3rem;">$${parseFloat(data.total || 0).toFixed(2)}</span>
-                        </div>
-                        <div class="receipt-item">
-                            <span>Category:</span>
-                            <span><span class="category-tag">${data.category || 'Other'}</span></span>
-                        </div>
-                        <hr style="margin: 1.5rem 0; border: none; border-top: 1px solid rgba(255,255,255,0.1);">
-                        <h4 style="margin-bottom: 1rem;">Items</h4>
-                        ${itemsHTML}
-                    </div>
-                </div>
-            `;
-        }
+    try {
+        const base64Image = await fileToBase64(file);
+        const receiptData = await scanReceipt(base64Image, apiKey);
 
-        function updateDashboard() {
-            console.log('📊 Updating dashboard, receipts:', receiptsData.length);
-            
-            if (receiptsData.length === 0) {
-                document.getElementById('monthlyTotal').textContent = '$0.00';
-                document.getElementById('receiptCount').textContent = '0';
-                document.getElementById('topCategory').textContent = '-';
-                document.getElementById('avgTransaction').textContent = '$0.00';
-                document.getElementById('categoryChart').innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 3rem;">No data yet. Scan your first receipt!</p>';
-                return;
-            }
+        displayReceiptData(receiptData, imageUrl);
 
-            const currentMonth = new Date().getMonth();
-            const currentYear = new Date().getFullYear();
-            
-            console.log('📅 Current month/year:', currentMonth, currentYear);
 
-            const monthlyReceipts = receiptsData.filter(r => {
-                const date = new Date(r.date);
-                const matches = date.getMonth() === currentMonth && date.getFullYear() === currentYear;
-                console.log('Receipt date:', r.date, 'matches:', matches);
-                return matches;
-            });
-            
-            console.log('📋 Monthly receipts:', monthlyReceipts.length);
+        saveReceipts();              
+        updateDashboard();           
+        receiptsData.push(receiptData); 
+        showAlert('✅ Receipt scanned successfully!', 'success');
 
-            const monthlyTotal = monthlyReceipts.reduce((sum, r) => sum + parseFloat(r.total || 0), 0);
-            const avgTransaction = monthlyReceipts.length > 0 ? monthlyTotal / monthlyReceipts.length : 0;
+    } catch (error) {
+        showAlert('❌ Failed: ' + error.message, 'danger');
+        resultsDiv.innerHTML = '';
+    }
+}
 
-            const categoryTotals = {};
-            monthlyReceipts.forEach(r => {
-                const cat = r.category || 'Other';
-                categoryTotals[cat] = (categoryTotals[cat] || 0) + parseFloat(r.total || 0);
-            });
-            
-            console.log('💰 Category totals:', categoryTotals);
+function fileToBase64(file) {
+    return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result.split(',')[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+    });
+}
 
-            const topCategory = Object.keys(categoryTotals).length > 0 ?
-                Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0][0] : '-';
+</script>
 
-            document.getElementById('monthlyTotal').textContent = `${monthlyTotal.toFixed(2)}`;
-            document.getElementById('receiptCount').textContent = receiptsData.length;
-            document.getElementById('topCategory').textContent = topCategory;
-            document.getElementById('avgTransaction').textContent = `${avgTransaction.toFixed(2)}`;
-
-            renderCategoryChart(categoryTotals);
-            console.log('✅ Dashboard updated');
-        }
-
-        function renderCategoryChart(categoryTotals) {
-            const container = document.getElementById('categoryChart');
-
-            if (Object.keys(categoryTotals).length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 3rem;">No data available</p>';
-                return;
-            }
-
-            const total = Object.values(categoryTotals).reduce((a, b) => a + b, 0);
-            const colors = {
-                'Food': '#FF6B35',
-                'Transport': '#004E89',
-                'Shopping': '#FFD23F',
-                'Entertainment': '#06D6A0',
-                'Healthcare': '#EF476F',
-                'Utilities': '#667eea',
-                'Other': '#764ba2'
-            };
-
-            const html = Object.entries(categoryTotals)
-                .sort((a, b) => b[1] - a[1])
-                .map(([category, amount]) => {
-                    const percentage = (amount / total * 100).toFixed(1);
-                    return `
-                        <div style="margin-bottom: 1.5rem;">
-                            <div style="display: flex; justify-content: space-between; margin-bottom: 0.5rem;">
-                                <span style="font-weight: 600;">${category}</span>
-                                <span>$${amount.toFixed(2)} (${percentage}%)</span>
-                            </div>
-                            <div style="background: rgba(255,255,255,0.05); height: 12px; border-radius: 6px; overflow: hidden;">
-                                <div style="background: ${colors[category] || colors['Other']}; height: 100%; width: ${percentage}%; border-radius: 6px; transition: width 0.5s ease;"></div>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-
-            container.innerHTML = html;
-        }
-
-        function renderHistory() {
-            const container = document.getElementById('receiptHistory');
-
-            if (receiptsData.length === 0) {
-                container.innerHTML = '<p style="text-align: center; color: var(--text-secondary); padding: 3rem;">No receipts yet. Start scanning!</p>';
-                return;
-            }
-
-            const sorted = [...receiptsData].sort((a, b) => new Date(b.date) - new Date(a.date));
-
-            container.innerHTML = sorted.map(receipt => `
-                <div class="receipt-list-item">
-                    <div>
-                        <div style="font-weight: 600; margin-bottom: 0.5rem;">${receipt.merchant || 'Unknown'}</div>
-                        <div style="font-size: 0.9rem; color: var(--text-secondary);">
-                            ${new Date(receipt.date).toLocaleDateString()} • 
-                            <span class="category-tag" style="margin: 0;">${receipt.category || 'Other'}</span>
-                        </div>
-                    </div>
-                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">
-                        $${parseFloat(receipt.total || 0).toFixed(2)}
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        function showAlert(message, type) {
-            const alert = document.createElement('div');
-            alert.className = `alert alert-${type}`;
-            alert.innerHTML = `
-                <span style="font-size: 1.5rem;">${type === 'success' ? '✅' : '❌'}</span>
-                <span>${message}</span>
-            `;
-
-            document.querySelector('.container').insertBefore(alert, document.querySelector('.container').firstChild);
-            setTimeout(() => alert.remove(), 5000);
-        }
-    </script>
 </body>
 </html>
